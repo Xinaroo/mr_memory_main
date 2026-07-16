@@ -238,6 +238,44 @@ table{width:100%;border-collapse:collapse;font-size:14px}
 th,td{border-bottom:1px solid var(--line);padding:10px;text-align:left}
 tr.current{background:var(--warn-bg)}
  
+/* Trial survey */
+.ts-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.ts-trialbox{display:flex;align-items:baseline;gap:8px;
+  background:linear-gradient(135deg,var(--accent),#5b7bf5);color:#fff;
+  padding:12px 20px;border-radius:14px;box-shadow:0 4px 14px rgba(79,110,242,.28)}
+.ts-trial-cap{font-size:12px;font-weight:700;letter-spacing:.14em;opacity:.85}
+.ts-trialbox strong{font-size:30px;font-weight:800;letter-spacing:-0.02em;line-height:1}
+.ts-trial-total{font-size:15px;font-weight:600;opacity:.9}
+.ts-controls{display:flex;gap:8px}
+.ts-meta{font-size:12.5px;color:var(--muted);background:#fafbfc;border:1px solid var(--line);
+  border-radius:10px;padding:9px 13px;margin-bottom:12px}
+.ts-meta b{color:var(--accent-ink)}
+.ts-progress{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.ts-dot{width:30px;height:30px;padding:0;border-radius:8px;font-size:12px;font-weight:700;
+  background:#fff;border:1px solid var(--line);color:var(--muted)}
+.ts-dot:hover{border-color:#cfd6e0}
+.ts-dot.done{background:var(--ok-weak);border-color:#bfe3d0;color:var(--ok)}
+.ts-dot.current{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 3px 10px rgba(79,110,242,.3)}
+.ts-q{border-top:1px solid var(--line-soft);padding:20px 0}
+.ts-q:first-child{border-top:0;padding-top:4px}
+.ts-q .ts-qtext{font-weight:600;font-size:15px;color:#22272f}
+.ts-q .ts-qtext .n{color:var(--accent-ink);margin-right:6px;font-weight:700}
+.ts-scale{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:14px}
+.ts-scale label{margin:0;text-align:center;font-weight:600;font-size:14px;color:#374151;
+  border:1px solid var(--line);border-radius:10px;padding:12px 2px;cursor:pointer;transition:.13s;position:relative}
+.ts-scale label:hover{border-color:var(--accent);background:var(--accent-weak)}
+.ts-scale input{position:absolute;opacity:0;width:0;height:0}
+.ts-scale label:has(input:checked){background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 4px 12px rgba(79,110,242,.3)}
+.ts-ends{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted);margin-top:8px}
+.ts-ends span{max-width:44%}
+.ts-ends .r{text-align:right}
+.ts-mid{text-align:center;font-size:12px;color:var(--faint);margin-top:6px}
+ 
+@media(max-width:700px){
+  .ts-scale{gap:5px}.ts-scale label{padding:11px 0;font-size:13px}
+  .ts-dot{width:27px;height:27px}
+}
+ 
 @media(max-width:800px){.layout-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){
   .wrap{padding:22px 14px 80px}
@@ -275,7 +313,8 @@ tr.current{background:var(--warn-bg)}
 <button class="secondary" onclick="show('sbsod')">1. Sense of Direction Questionnaire</button>
 <button class="secondary" onclick="show('corsi')">2. Visuospatial Working Memory Task</button>
 <button class="secondary" onclick="show('experience')">3. VR/MR Experience</button>
-<button class="secondary researcherOnly" onclick="show('schedule')">4. Layout Sets</button>
+<button class="secondary" onclick="show('trialSurvey')">4. Trial 설문 (trial별 반복)</button>
+<button class="secondary researcherOnly" onclick="show('schedule')">5. Layout Sets</button>
 </div>
 </section>
  
@@ -317,6 +356,32 @@ tr.current{background:var(--warn-bg)}
 <div id="expStatus" class="status"></div>
 </section>
  
+<section class="card hidden section" id="trialSurvey">
+<h2>Trial 설문</h2>
+<div class="ts-head">
+  <div class="ts-trialbox">
+    <span class="ts-trial-cap">TRIAL</span>
+    <strong id="tsTrialNum">–</strong>
+    <span class="ts-trial-total">/ <span id="tsTrialTotal">21</span></span>
+  </div>
+  <div class="ts-controls researcherOnly">
+    <button class="secondary" onclick="tsPrev()">◀ 이전</button>
+    <button class="secondary" onclick="tsNext()">다음 ▶</button>
+  </div>
+</div>
+<div class="ts-meta researcherOnly" id="tsMeta"></div>
+<div class="ts-progress researcherOnly" id="tsProgress"></div>
+ 
+<div id="tsGate">
+  <p class="help">참가자가 회상 과제를 마친 뒤, 연구자가 현재 trial 번호를 확인하고 아래 버튼으로 설문을 시작해 주세요.</p>
+  <div class="actions"><button class="primary" onclick="tsStart()">이 Trial 설문 시작</button></div>
+</div>
+ 
+<div id="tsForm" class="hidden"></div>
+<div class="actions hidden" id="tsFormActions"><button class="primary" onclick="tsSubmit()">응답 제출</button></div>
+<div id="tsStatus" class="status"></div>
+</section>
+ 
 <section class="card hidden section researcherOnly" id="schedule">
 <h2>Layout Sets</h2>
 <div class="tabs" id="tabs"></div>
@@ -350,7 +415,7 @@ function loadParticipant(){
  participantId=pid;sessionMemo=$("memo").value.trim();schedule=rows;current=0;
  $("headPid").textContent=pid;$("nav").classList.remove("hidden");
  if(!APP_CONFIG.SHOW_RESEARCHER_PANEL) document.querySelectorAll(".researcherOnly").forEach(x=>x.classList.add("hidden"));
- renderSbsod();renderSchedule();
+ renderSbsod();renderSchedule();tsInit();
  status("loginStatus",`${pid}의 ${rows.length}개 시행을 불러왔습니다.`,"ok");
  save("session_events",{event:"participant_loaded",schedule_count:rows.length});
 }
@@ -445,6 +510,126 @@ function closeLayoutModal(event){
 document.addEventListener("keydown",e=>{
   if(e.key==="Escape") closeLayoutModal();
 });
+ 
+// ===== Trial survey =====
+const TS_QUESTIONS=[
+ {key:"mental_effort", text:"방금 MR 환경에서 수행한 작업에 얼마나 많은 정신적 노력이 필요했습니까?",
+  low:"거의 노력이 필요하지 않았다", high:"매우 많은 노력이 필요했다"},
+ {key:"memory_confidence", text:"방금 회상한 실제 물체들의 위치가 얼마나 정확하다고 생각하십니까?",
+  low:"전혀 정확하지 않다고 생각한다", high:"매우 정확하다고 생각한다"},
+ {key:"virtual_anchoring", text:"방금 실제 물체들의 위치를 회상할 때, 가상 객체의 위치를 얼마나 기준으로 사용하셨습니까?",
+  low:"전혀 기준으로 사용하지 않았다", high:"매우 강하게 기준으로 사용했다"},
+ {key:"encoding_mode", text:"방금 실제 물체들의 위치를 회상할 때, 어느 방식에 더 가깝게 기억하셨습니까?",
+  low:"각 물체의 위치를 하나씩 개별적으로 기억했다", high:"물체들이 이루는 전체적인 모양이나 구조로 기억했다",
+  mid:"두 방식을 비슷한 정도로 사용했다"}
+];
+ 
+let tsCurrent=1, tsStartedAt=null, tsDone=new Set();
+ 
+function tsTrials(){
+  return [...schedule].sort((a,b)=>Number(a.trial_index)-Number(b.trial_index));
+}
+function tsRow(idx){
+  return tsTrials().find(r=>Number(r.trial_index)===idx);
+}
+function tsDoneKey(){return "mr_survey_done_"+participantId;}
+ 
+function tsInit(){
+  const rows=tsTrials();
+  tsDone=new Set(JSON.parse(localStorage.getItem(tsDoneKey())||"[]").map(Number));
+  $("tsTrialTotal").textContent=rows.length||21;
+  // 첫 미완료 trial로 이동
+  const firstOpen=rows.map(r=>Number(r.trial_index)).find(i=>!tsDone.has(i));
+  tsCurrent=firstOpen || Number(rows[0]?.trial_index) || 1;
+  tsCloseForm();
+  tsRender();
+}
+ 
+function tsRender(){
+  const rows=tsTrials(), total=rows.length||21;
+  $("tsTrialNum").textContent=tsCurrent;
+  const r=tsRow(tsCurrent);
+  $("tsMeta").innerHTML = r
+    ? `Block ${blockNum(r.block_id)} · <b>${r.placement_relation}</b> · 조건 <b>${r.condition}</b> · layout <b>${r.layout_id}</b>`
+    : "해당 trial 정보를 찾지 못했습니다.";
+  $("tsProgress").innerHTML=rows.map(row=>{
+    const i=Number(row.trial_index);
+    const cls=["ts-dot",tsDone.has(i)?"done":"",i===tsCurrent?"current":""].join(" ");
+    return `<button class="${cls}" onclick="tsGo(${i})" title="Trial ${i}${tsDone.has(i)?" (완료)":""}">${i}</button>`;
+  }).join("");
+  const doneCount=rows.filter(row=>tsDone.has(Number(row.trial_index))).length;
+  status("tsStatus",`완료 ${doneCount} / ${total} trial`, doneCount===total?"ok":"");
+}
+ 
+function tsGo(i){ if(!schedule.length)return; tsCurrent=i; tsCloseForm(); tsRender(); }
+function tsPrev(){ if(tsCurrent>1){tsGo(tsCurrent-1);} }
+function tsNext(){ const total=tsTrials().length||21; if(tsCurrent<total){tsGo(tsCurrent+1);} }
+ 
+function tsCloseForm(){
+  $("tsForm").classList.add("hidden");$("tsForm").innerHTML="";
+  $("tsFormActions").classList.add("hidden");
+  $("tsGate").classList.remove("hidden");
+  tsStartedAt=null;
+}
+ 
+function tsStart(){
+  if(!participantId) return alert("먼저 참가자 ID를 입력해 주세요.");
+  if(!tsRow(tsCurrent)) return status("tsStatus","해당 trial 정보를 찾지 못했습니다.","bad");
+  if(tsDone.has(tsCurrent) && !confirm(`Trial ${tsCurrent}은 이미 응답이 저장되어 있습니다. 다시 응답하시겠습니까?`)) return;
+  tsStartedAt=new Date().toISOString();
+  $("tsForm").innerHTML=TS_QUESTIONS.map((q,i)=>{
+    const opts=[1,2,3,4,5,6,7].map(v=>`<label><input type="radio" name="tsq${i}" value="${v}">${v}</label>`).join("");
+    const mid=q.mid?`<div class="ts-mid">4 = ${q.mid}</div>`:"";
+    return `<div class="ts-q">
+      <div class="ts-qtext"><span class="n">${i+1}.</span>${q.text}</div>
+      <div class="ts-scale">${opts}</div>
+      <div class="ts-ends"><span>1 = ${q.low}</span><span class="r">7 = ${q.high}</span></div>
+      ${mid}
+    </div>`;
+  }).join("");
+  $("tsForm").classList.remove("hidden");
+  $("tsFormActions").classList.remove("hidden");
+  $("tsGate").classList.add("hidden");
+  status("tsStatus",`Trial ${tsCurrent} 설문을 시작했습니다. 4문항에 모두 응답해 주세요.`);
+  $("trialSurvey").scrollIntoView({behavior:"smooth",block:"start"});
+}
+ 
+async function tsSubmit(){
+  const answers={};
+  for(let i=0;i<TS_QUESTIONS.length;i++){
+    const x=document.querySelector(`input[name=tsq${i}]:checked`);
+    if(!x) return status("tsStatus",`${i+1}번 문항에 응답해 주세요.`,"bad");
+    answers[TS_QUESTIONS[i].key]=+x.value;
+  }
+  const r=tsRow(tsCurrent);
+  const submittedAt=new Date().toISOString();
+  const rt=tsStartedAt ? +((new Date(submittedAt)-new Date(tsStartedAt))/1000).toFixed(2) : null;
+  await save("trial_survey",{
+    trial_index:tsCurrent,
+    layout_id:r?r.layout_id:"",
+    relation:r?r.placement_relation:"",
+    interaction_condition:r?r.condition:"",
+    block_id:r?r.block_id:"",
+    within_block_index:r?r.within_block_index:"",
+    mental_effort:answers.mental_effort,
+    memory_confidence:answers.memory_confidence,
+    virtual_anchoring:answers.virtual_anchoring,
+    encoding_mode:answers.encoding_mode,
+    survey_started_at:tsStartedAt,
+    survey_submitted_at:submittedAt,
+    response_time_sec:rt
+  });
+  tsDone.add(tsCurrent);
+  localStorage.setItem(tsDoneKey(),JSON.stringify([...tsDone]));
+  tsCloseForm();
+  const total=tsTrials().length||21;
+  // 다음 미완료 trial로 포인터만 이동(설문은 자동으로 열지 않음)
+  const nextOpen=tsTrials().map(row=>Number(row.trial_index)).find(i=>!tsDone.has(i));
+  if(nextOpen) tsCurrent=nextOpen; else if(tsCurrent<total) tsCurrent++;
+  tsRender();
+  status("tsStatus",`Trial 응답이 저장되었습니다. 다음 trial을 준비해 주세요. (완료 ${tsDone.size} / ${total})`,"ok");
+}
+ 
 </script>
 </body>
 </html>
