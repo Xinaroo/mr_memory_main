@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MR Main Study</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--text:#17191d;--muted:#66707b;--line:#dfe4ea;--accent:#315efb;--ok:#117a48;--bad:#b42318}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,"Noto Sans KR",sans-serif}
+header{position:sticky;top:0;z-index:10;background:#fffffff2;border-bottom:1px solid var(--line);padding:15px 20px;display:flex;justify-content:space-between}
+.wrap{max-width:1080px;margin:auto;padding:24px 16px 70px}.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:23px;margin-bottom:17px}
+.hidden{display:none!important} h2{margin-top:0} p{line-height:1.65}.help{color:var(--muted)}label{display:block;font-weight:700;margin:9px 0}
+input,select,button{font:inherit}input[type=text],select{width:100%;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fff}
+button{border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer}.primary{background:var(--accent);color:#fff}.secondary{background:#e9edf3}.danger{background:#fee4e2;color:var(--bad)}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:17px}.status{margin-top:12px;color:var(--muted)}.ok{color:var(--ok)}.bad{color:var(--bad)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}.q{border-top:1px solid var(--line);padding:18px 0}.q:first-child{border-top:0}
+.likert{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:11px}.likert label{text-align:center;border:1px solid var(--line);border-radius:8px;padding:9px 2px;font-weight:600}
+.ends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:5px}
+#board{width:min(72vw,610px);aspect-ratio:1.3/1;margin:20px auto;background:#eef1f4;border:1px solid var(--line);border-radius:13px;position:relative}
+.block{position:absolute;width:14%;aspect-ratio:1;background:#272c33;border-radius:7px;transition:.12s;cursor:pointer}.flash{background:#ffd54a;transform:scale(1.08)}.tap{background:#73a9ff}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.metric{background:#fafbfc;border:1px solid var(--line);border-radius:9px;padding:9px}.metric b{display:block;font-size:19px}
+.tabs{display:flex;gap:7px;flex-wrap:wrap}.tabs .active{background:var(--accent);color:#fff}.focus{border:2px solid var(--accent);border-radius:13px;background:#f6f8ff;padding:20px;margin:16px 0}
+.focus strong{font-size:28px;display:block;margin:8px 0}.layout-img{display:block;max-width:100%;max-height:500px;margin:16px auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{border-bottom:1px solid var(--line);padding:9px;text-align:left}tr.current{background:#fff7ce}
+@media(max-width:700px){.grid2{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}table{font-size:12px}}
+</style>
+</head>
+<body>
+<header><b>MR Main Study</b><span id="headPid">참가자 미선택</span></header>
+<div class="wrap">
+
+<section class="card" id="login">
+<h2>참가자 시작</h2>
+<p class="help">참가자 ID를 입력해 주세요. 입력한 ID에 연결된 실험 순서가 자동으로 불러와집니다.</p>
+<div class="grid2">
+<div><label>참가자 ID</label><input id="pid" type="text" placeholder="예: P001"></div>
+<div><label>세션 메모</label><input id="memo" type="text" placeholder="선택 사항"></div>
+</div>
+<div class="actions"><button class="primary" onclick="loadParticipant()">시작</button></div>
+<div id="loginStatus" class="status"></div>
+</section>
+
+<section class="card hidden" id="nav">
+<h2>진행 단계</h2>
+<div class="actions">
+<button class="secondary" onclick="show('sbsod')">1. 방향 감각 설문</button>
+<button class="secondary" onclick="show('corsi')">2. 공간 작업기억 과제</button>
+<button class="secondary" onclick="show('experience')">3. VR/MR 사용 경험</button>
+<button class="secondary researcherOnly" onclick="show('schedule')">4. Block 및 Layout</button>
+</div>
+</section>
+
+<section class="card hidden section" id="sbsod">
+<h2>방향 감각 설문</h2>
+<p class="help">각 문장을 읽고 본인에게 얼마나 해당하는지 응답해 주세요. 1은 ‘매우 그렇다’, 7은 ‘전혀 그렇지 않다’를 의미합니다.</p>
+<div id="sbsodQs"></div>
+<div class="actions"><button class="primary" onclick="submitSbsod()">응답 저장</button></div>
+<div id="sbsodStatus" class="status"></div>
+</section>
+
+<section class="card hidden section" id="corsi">
+<h2>공간 작업기억 과제</h2>
+<p class="help">화면의 블록이 순서대로 밝아집니다. 모두 제시된 뒤, 밝아졌던 순서와 같은 순서로 블록을 눌러 주세요.</p>
+<div class="metrics">
+<div class="metric">현재 길이<b id="span">2</b></div>
+<div class="metric">시행 수<b id="trialN">0</b></div>
+<div class="metric">정답 수<b id="correctN">0</b></div>
+<div class="metric">최대 길이<b id="maxSpan">0</b></div>
+</div>
+<div id="board"></div>
+<div id="corsiMsg" class="status" style="text-align:center">시작 버튼을 눌러 주세요.</div>
+<div class="actions" style="justify-content:center">
+<button id="startCorsi" class="primary" onclick="startCorsiTask()">과제 시작</button>
+<button id="stopCorsi" class="danger" onclick="finishCorsi(true)" disabled>과제 종료 및 저장</button>
+</div>
+</section>
+
+<section class="card hidden section" id="experience">
+<h2>VR/MR 사용 경험</h2>
+<div class="grid2">
+<div><label>지금까지 VR 기기를 사용한 횟수</label><select id="vr"><option value="">선택</option><option>없음</option><option>1–2회</option><option>3–10회</option><option>11–30회</option><option>31회 이상</option></select></div>
+<div><label>지금까지 MR 또는 AR 기기를 사용한 횟수</label><select id="mr"><option value="">선택</option><option>없음</option><option>1–2회</option><option>3–10회</option><option>11–30회</option><option>31회 이상</option></select></div>
+<div><label>최근 6개월 동안 VR/MR을 사용한 빈도</label><select id="recent"><option value="">선택</option><option>사용하지 않음</option><option>월 1회 미만</option><option>월 1–3회</option><option>주 1회</option><option>주 2회 이상</option></select></div>
+<div><label>사용해 본 주요 기기</label><input id="devices" type="text" placeholder="예: Meta Quest 3"></div>
+<div><label>VR/MR 사용 숙련도</label><select id="skill"><option value="">선택</option><option value="1">1 매우 낮음</option><option value="2">2</option><option value="3">3</option><option value="4">4 보통</option><option value="5">5</option><option value="6">6</option><option value="7">7 매우 높음</option></select></div>
+<div><label>추가 설명</label><input id="expMemo" type="text" placeholder="선택 사항"></div>
+</div>
+<div class="actions"><button class="primary" onclick="submitExperience()">응답 저장</button></div>
+<div id="expStatus" class="status"></div>
+</section>
+
+<section class="card hidden section researcherOnly" id="schedule">
+<h2>Block 및 Layout 안내</h2>
+<div class="tabs" id="tabs"></div>
+<div class="focus" id="trialCard"></div>
+<img id="layoutImage" class="layout-img" alt="현재 layout">
+<div class="actions">
+<button class="secondary" onclick="moveTrial(-1)">이전 시행</button>
+<button class="primary" onclick="moveTrial(1)">다음 시행</button>
+<button class="secondary" onclick="logTrial('layout_shown')">현재 layout 표시 기록</button>
+<button class="secondary" onclick="logTrial('trial_completed')">현재 시행 완료 기록</button>
+</div>
+<div id="scheduleStatus" class="status"></div>
+<div style="overflow:auto;max-height:480px;margin-top:16px"><table>
+<thead><tr><th>전체</th><th>Block</th><th>Block 내</th><th>배치 관계</th><th>상호작용</th><th>Layout</th></tr></thead>
+<tbody id="rows"></tbody></table></div>
+</section>
+</div>
+
+<script src="config.js"></script>
+<script src="schedule.js"></script>
+<script>
+const SBSOD=["나는 다른 사람에게 길을 안내하는 데 자신이 있다.", "나는 물건을 어디에 두었는지 잘 기억하지 못한다.", "나는 거리가 어느 정도인지 잘 판단한다.", "나는 방향 감각이 좋다.", "나는 주변 환경을 동서남북의 방위를 중심으로 생각하는 편이다.", "나는 새로운 장소에서 쉽게 길을 잃는다.", "나는 지도를 보는 것을 좋아한다.", "나는 다른 사람이 설명한 길 안내를 이해하기 어렵다.", "나는 지도를 잘 읽는다.", "나는 차에 승객으로 타고 이동할 때 지나온 길을 잘 기억하지 못한다.", "나는 다른 사람에게 길을 알려주는 것을 좋아하지 않는다.", "내가 현재 어디에 있는지 아는 것은 나에게 별로 중요하지 않다.", "장거리 여행을 할 때 나는 주로 다른 사람이 이동 경로를 계획하도록 한다.", "나는 새로운 길을 한 번만 지나가도 대체로 기억할 수 있다.", "나는 주변 지역에 대한 머릿속 지도가 잘 형성되어 있지 않다."];
+let participantId="", sessionMemo="", schedule=[], current=0;
+const $=id=>document.getElementById(id);
+const status=(id,msg,cls="")=>{$(id).textContent=msg;$(id).className="status "+cls;};
+function show(id){document.querySelectorAll(".section").forEach(x=>x.classList.add("hidden"));$(id).classList.remove("hidden");scrollTo(0,0);}
+
+function loadParticipant(){
+ const pid=$("pid").value.trim().toUpperCase();
+ if(!/^P\d{3}$/.test(pid)) return status("loginStatus","P001과 같은 형식으로 입력해 주세요.","bad");
+ const rows=(window.MR_SCHEDULE||[]).filter(r=>String(r.participant_id).toUpperCase()===pid)
+   .sort((a,b)=>Number(a.trial_index)-Number(b.trial_index));
+ if(!rows.length) return status("loginStatus","해당 참가자의 실험 순서를 찾지 못했습니다.","bad");
+ participantId=pid;sessionMemo=$("memo").value.trim();schedule=rows;current=0;
+ $("headPid").textContent=pid;$("nav").classList.remove("hidden");
+ if(!APP_CONFIG.SHOW_RESEARCHER_PANEL) document.querySelectorAll(".researcherOnly").forEach(x=>x.classList.add("hidden"));
+ renderSbsod();renderSchedule();
+ status("loginStatus",`${pid}의 ${rows.length}개 시행을 불러왔습니다.`,"ok");
+ save("session_events",{event:"participant_loaded",schedule_count:rows.length});
+}
+
+async function save(recordType,data){
+ const record={participant_id:participantId,record_type:recordType,client_timestamp:new Date().toISOString(),session_memo:sessionMemo,...data};
+ const key="mr_backup_"+participantId;
+ const backup=JSON.parse(localStorage.getItem(key)||"[]");backup.push(record);localStorage.setItem(key,JSON.stringify(backup));
+ if(!APP_CONFIG.GOOGLE_SCRIPT_URL || APP_CONFIG.GOOGLE_SCRIPT_URL.includes("PASTE_")) return {online:false};
+ try{
+   await fetch(APP_CONFIG.GOOGLE_SCRIPT_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(record)});
+   return {online:true};
+ }catch(e){return {online:false,error:String(e)}}
+}
+
+function renderSbsod(){
+ $("sbsodQs").innerHTML=SBSOD.map((q,i)=>`<div class="q"><b>${i+1}.</b> ${q}<div class="likert">${[1,2,3,4,5,6,7].map(v=>`<label><input type="radio" name="s${i+1}" value="${v}">${v}</label>`).join("")}</div><div class="ends"><span>매우 그렇다</span><span>전혀 그렇지 않다</span></div></div>`).join("");
+}
+async function submitSbsod(){
+ const raw=[];for(let i=1;i<=15;i++){const x=document.querySelector(`input[name=s${i}]:checked`);if(!x)return status("sbsodStatus",`${i}번 문항에 응답해 주세요.`,"bad");raw.push(+x.value);}
+ const reverse=new Set([1,3,4,5,7,9,14]);const scored=raw.map((v,i)=>reverse.has(i+1)?8-v:v);const mean=scored.reduce((a,b)=>a+b,0)/15;
+ await save("sbsod",{raw_responses:raw,scored_responses:scored,sbsod_mean:+mean.toFixed(4),language:"Korean adaptation"});
+ status("sbsodStatus",`저장했습니다. 방향 감각 점수는 ${mean.toFixed(2)}점입니다.`,"ok");
+}
+
+async function submitExperience(){
+ if(!$("vr").value||!$("mr").value||!$("recent").value||!$("skill").value)return status("expStatus","필수 항목을 모두 선택해 주세요.","bad");
+ await save("vr_mr_experience",{vr_experience:$("vr").value,mr_ar_experience:$("mr").value,recent_6m_frequency:$("recent").value,devices:$("devices").value.trim(),self_rated_skill:+$("skill").value,note:$("expMemo").value.trim()});
+ status("expStatus","응답을 저장했습니다.","ok");
+}
+
+// Corsi
+const POS=[[8,10],[39,8],[74,13],[18,37],[53,34],[80,46],[7,70],[40,72],[69,74]];
+$("board").innerHTML=POS.map((p,i)=>`<div id="b${i}" class="block" style="left:${p[0]}%;top:${p[1]}%" onclick="tapBlock(${i})"></div>`).join("");
+let C={};
+function resetC(){C={span:2,within:0,fail:0,total:0,correct:0,max:0,seq:[],resp:[],accept:false,logs:[],started:new Date().toISOString()};metrics();}
+function metrics(){$("span").textContent=C.span||2;$("trialN").textContent=C.total||0;$("correctN").textContent=C.correct||0;$("maxSpan").textContent=C.max||0;}
+function startCorsiTask(){if(!participantId)return alert("먼저 참가자 ID를 입력해 주세요.");resetC();$("startCorsi").disabled=true;$("stopCorsi").disabled=false;nextCorsi();}
+function makeSeq(n){const a=[];while(a.length<n){const x=Math.floor(Math.random()*9);if(a[a.length-1]!==x)a.push(x)}return a}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function nextCorsi(){C.within++;C.total++;C.seq=makeSeq(C.span);C.resp=[];C.accept=false;metrics();$("corsiMsg").textContent="순서를 기억해 주세요.";await sleep(500);for(const i of C.seq){$("b"+i).classList.add("flash");await sleep(650);$("b"+i).classList.remove("flash");await sleep(220)}C.accept=true;$("corsiMsg").textContent="같은 순서로 눌러 주세요.";}
+function tapBlock(i){if(!C.accept)return;C.resp.push(i);$("b"+i).classList.add("tap");setTimeout(()=>$("b"+i).classList.remove("tap"),150);if(C.resp.length===C.seq.length)scoreCorsi();}
+function scoreCorsi(){C.accept=false;const ok=C.seq.every((v,i)=>C.resp[i]===v);if(ok){C.correct++;C.max=Math.max(C.max,C.span)}else C.fail++;C.logs.push({trial:C.total,span:C.span,trial_within_span:C.within,sequence:C.seq,response:C.resp,correct:ok});metrics();$("corsiMsg").textContent=ok?"정답입니다.":"오답입니다.";setTimeout(()=>{if(C.within>=2){if(C.fail>=2)return finishCorsi(false);C.span++;C.within=0;C.fail=0}nextCorsi();},850);}
+async function finishCorsi(aborted){if(!C.started)return;C.accept=false;$("stopCorsi").disabled=true;await save("corsi_summary",{implementation:"custom_forward_corsi_9_blocks",start_span:2,trials_per_span:2,stopping_rule:"two failures at same span",max_span:C.max,total_correct:C.correct,total_trials:C.total,aborted,started_at:C.started,ended_at:new Date().toISOString(),trial_logs:C.logs});$("corsiMsg").textContent=`저장했습니다. 최대 길이 ${C.max}, 정답 ${C.correct}/${C.total}`;$("startCorsi").disabled=false;}
+
+// Schedule/layout
+function imagePath(sourceSet){return `images/layout_${String(sourceSet).padStart(2,"0")}.${APP_CONFIG.IMAGE_EXTENSION||"png"}`;}
+function renderSchedule(){
+ const blocks=[...new Set(schedule.map(r=>Number(r.block_id)))];
+ $("tabs").innerHTML=blocks.map(b=>`<button class="secondary" onclick="jumpBlock(${b})">Block ${b}</button>`).join("");
+ renderTrial();
+}
+function jumpBlock(b){const i=schedule.findIndex(r=>Number(r.block_id)===b);if(i>=0){current=i;renderTrial();}}
+function moveTrial(d){current=Math.max(0,Math.min(schedule.length-1,current+d));renderTrial();}
+function renderTrial(){
+ const r=schedule[current];if(!r)return;
+ $("trialCard").innerHTML=`Participant ${r.participant_id} · 시행 ${r.trial_index}/${schedule.length}<strong>${r.placement_relation} · ${r.condition}</strong>Block ${r.block_id} · Block 내 ${r.within_block_index} · Layout ${r.layout_id} · Source set ${r.source_set_number}`;
+ $("layoutImage").src=imagePath(r.source_set_number);$("layoutImage").alt=`layout_${String(r.source_set_number).padStart(2,"0")}`;
+ $("layoutImage").onerror=()=>{status("scheduleStatus",`${imagePath(r.source_set_number)} 파일을 찾지 못했습니다.`,"bad");};
+ $("rows").innerHTML=schedule.map((x,i)=>`<tr class="${i===current?"current":""}" onclick="current=${i};renderTrial()"><td>${x.trial_index}</td><td>${x.block_id}</td><td>${x.within_block_index}</td><td>${x.placement_relation}</td><td>${x.condition}</td><td>${x.source_set_number}</td></tr>`).join("");
+}
+async function logTrial(event){const r=schedule[current];await save("schedule_events",{event,trial_index:r.trial_index,trial_id:r.trial_id,block_id:r.block_id,within_block_index:r.within_block_index,placement_relation:r.placement_relation,condition:r.condition,layout_id:r.layout_id,source_set_number:r.source_set_number,image_path:imagePath(r.source_set_number)});status("scheduleStatus","기록했습니다.","ok");}
+</script>
+</body>
+</html>

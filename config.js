@@ -1,0 +1,10 @@
+window.APP_CONFIG = {
+  // Apps Script를 웹 앱으로 배포한 뒤 /exec 주소를 아래에 붙여넣으세요.
+  GOOGLE_SCRIPT_URL: "PASTE_YOUR_APPS_SCRIPT_EXEC_URL_HERE",
+
+  // 참가자 화면에서 연구자용 Block/Layout 메뉴를 숨기려면 false로 바꾸세요.
+  SHOW_RESEARCHER_PANEL: true,
+
+  // 이미지 파일 확장자입니다. layout_01.png ~ layout_60.png를 사용합니다.
+  IMAGE_EXTENSION: "png"
+};
