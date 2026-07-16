@@ -6,5 +6,5 @@ window.APP_CONFIG = {
   SHOW_RESEARCHER_PANEL: true,
 
   // 이미지 파일 확장자입니다. layout_01.png ~ layout_60.png를 사용합니다.
-  IMAGE_EXTENSION: "png"
+  IMAGE_EXTENSION: "jpg"
 };
